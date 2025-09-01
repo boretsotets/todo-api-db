@@ -1,30 +1,34 @@
 package main
 
 import (
-	"fmt"
-	"github.com/jackc/pgx/v5"
-	"context"
+	"github.com/gin-gonic/gin"
+	"github.com/boretsotets/todo-api-db/internal"
 )
 
-//DB_HOST=localhost
-//DB_PORT=5432
-//DB_USER=postgres
-//DB_PASSWORD=secret
-//DB_NAME=postgres
 
 func main() {
-	conn, err := pgx.Connect(context.Background(), "postgres://postgres:secret@localhost:5432/postgres?sslmode=disable")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	router := gin.Default()
+	router.GET("/todos", handlers.HandlerGet)
+	router.POST("/todos", handlers.HandlerPost)
+	router.Run("localhost:8080")
+
+	/*
 	tag, err := conn.Exec(context.Background(), 
-	"CREATE TABLE IF NOT EXISTS tasks (Id SERIAL PRIMARY KEY, Description TEXT, Status TEXT, CreatedAt TIMESTAMP, UpdatedAT TIMESTAMP)")
+	"CREATE TABLE IF NOT EXISTS tasks (Id SERIAL PRIMARY KEY, Title TEXT, Description TEXT)")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	fmt.Println(tag)
 
-	defer conn.Close(context.Background())
+	tag, err = conn.Exec(context.Background(),
+"INSERT INTO tasks (Title, Description) VALUES ('pray isha', 'pray 4 rakaats of isha prayer')")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(tag)
+	*/
+
+
 }
