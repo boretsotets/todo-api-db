@@ -7,6 +7,7 @@ import (
 	"log"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"encoding/json"
 )
 //DB_HOST=localhost
 //DB_PORT=5432
@@ -22,6 +23,11 @@ type Task struct {
 	Id int
 	Title string
 	Description string
+}
+
+type JsonTaskPost struct {
+	Title string`json:"title"`
+	Description string`json:"description"`
 }
 
 func HandlerGet(c *gin.Context) {
@@ -65,6 +71,37 @@ func HandlerPost(c *gin.Context) {
 		data.Message = "unauthorized"
 		c.Header("Content-Type", "application/json")
 		c.IndentedJSON(http.StatusUnauthorized, data)	
+	} else {
+		var newtask JsonTaskPost
+		err := json.NewDecoder(c.Request.Body).Decode(&newtask)
+		//c.BindJSON(&newtask)
+		if err != nil {
+			c.String(http.StatusBadRequest, "Error decoding JSON")
+		} else {
+			conn, err := pgx.Connect(context.Background(), "postgres://postgres:secret@localhost:5432/postgres?sslmode=disable")
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			tag, err := conn.Exec(context.Background(), 
+			"CREATE TABLE IF NOT EXISTS tasks (Id SERIAL PRIMARY KEY, Title TEXT, Description TEXT)")
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			fmt.Println(tag)
+			tag, err = conn.Exec(context.Background(),
+			"INSERT INTO tasks (Title, Description) VALUES ($1, $2)", newtask.Title, newtask.Description)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
+				fmt.Println(tag)
+		}
 	}
 
+}
+
+func HandlerUpdate(c *gin.Context) {
+	
 }
