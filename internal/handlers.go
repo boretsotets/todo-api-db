@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"encoding/json"
+	"strconv"
 )
 //DB_HOST=localhost
 //DB_PORT=5432
@@ -34,8 +35,7 @@ func HandlerGet(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 	conn, err := pgx.Connect(context.Background(), "postgres://postgres:secret@localhost:5432/postgres?sslmode=disable")
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatalf("Database connection failed: %v", err)
 	}
 	
 	rows, err := conn.Query(context.Background(), "SELECT Id, Title, Description FROM tasks")
@@ -66,42 +66,96 @@ type RespondUnauthorized struct {
 }
 
 func HandlerPost(c *gin.Context) {
+	c.Header("Content-Type", "application/json")
+
 	if authtoken := c.GetHeader("Authorization"); authtoken == "" {
 		var data RespondUnauthorized
 		data.Message = "unauthorized"
-		c.Header("Content-Type", "application/json")
 		c.IndentedJSON(http.StatusUnauthorized, data)	
 	} else {
 		var newtask JsonTaskPost
 		err := json.NewDecoder(c.Request.Body).Decode(&newtask)
-		//c.BindJSON(&newtask)
 		if err != nil {
 			c.String(http.StatusBadRequest, "Error decoding JSON")
 		} else {
 			conn, err := pgx.Connect(context.Background(), "postgres://postgres:secret@localhost:5432/postgres?sslmode=disable")
 			if err != nil {
-				fmt.Println(err)
-				return
+				log.Fatalf("Database connection failed: %v", err)
 			}
-			tag, err := conn.Exec(context.Background(), 
+			_, err = conn.Exec(context.Background(), 
 			"CREATE TABLE IF NOT EXISTS tasks (Id SERIAL PRIMARY KEY, Title TEXT, Description TEXT)")
 			if err != nil {
-				fmt.Println(err)
-				return
+				log.Fatalf(err)
 			}
-			fmt.Println(tag)
-			tag, err = conn.Exec(context.Background(),
-			"INSERT INTO tasks (Title, Description) VALUES ($1, $2)", newtask.Title, newtask.Description)
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
-				fmt.Println(tag)
+
+			var curr_task Task
+			err = conn.QueryRow(context.Background(), "INSERT INTO tasks (Title, Description) VALUES ($1, $2) RETURNING (Id, $1, $2)", newtask.Title, newtask.Description).Scan(&curr_task)
+			if err != nil {
+				log.Fatalf("Rows iteration error: %v", err)
+			}
+			c.IndentedJSON(http.StatusOK, curr_task)
 		}
 	}
 
 }
 
 func HandlerUpdate(c *gin.Context) {
-	
+	c.Header("Content-Type", "application/json")
+	if authtoken := c.GetHeader("Authorization"); authtoken == "" {
+		var data RespondUnauthorized
+		data.Message = "unauthorized"
+		c.Header("Content-Type", "application/json")
+		c.IndentedJSON(http.StatusUnauthorized, data)	
+	} else {
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			log.Fatalf("id conversion error: %v", err)
+		}
+		var newtask JsonTaskPost
+		err = json.NewDecoder(c.Request.Body).Decode(&newtask)
+
+		conn, err := pgx.Connect(context.Background(), "postgres://postgres:secret@localhost:5432/postgres?sslmode=disable")
+		if err != nil {
+			log.Fatalf("Database connection failed: %v", err)
+		}
+		_, err = conn.Exec(context.Background(), 
+		"CREATE TABLE IF NOT EXISTS tasks (Id SERIAL PRIMARY KEY, Title TEXT, Description TEXT)")
+		if err != nil {
+			log.Fatalf(err)
+		}
+		var curr_task Task
+		err = conn.QueryRow(context.Background(), "UPDATE tasks SET Title = $1, Description = $2 WHERE Id = $3 RETURNING (Id, Title, Description)", newtask.Title, newtask.Description, id).Scan(&curr_task)
+		if err != nil {
+			log.Fatalf("Rows iteration error: %v", err)
+		}
+		c.IndentedJSON(http.StatusOK, curr_task)
+
+
+	}
+}
+
+func HandlerDelete(c *gin.Context) {
+	c.Header("Content-Type", "application/json")
+	if authtoken := c.GetHeader("Authorization"); authtoken == "" {
+		var data RespondUnauthorized
+		data.Message = "unauthorized"
+		c.Header("Content-Type", "application/json")
+		c.IndentedJSON(http.StatusUnauthorized, data)	
+	} else {
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			log.Fatalf("id conversion error: %v", err)
+		}
+		conn, err := pgx.Connect(context.Background(), "postgres://postgres:secret@localhost:5432/postgres?sslmode=disable")
+		if err != nil {
+			log.Fatalf("Database connection failed: %v", err)
+		}
+		_, err = conn.Exec(context.Background(), 
+		"CREATE TABLE IF NOT EXISTS tasks (Id SERIAL PRIMARY KEY, Title TEXT, Description TEXT)")
+		if err != nil {
+			log.Fatalf(err)
+		}
+		conn.QueryRow(context.Background(), "DELETE FROM tasks WHERE Id = $1", id)
+		c.Status(http.StatusNoContent)
+	}
 }
