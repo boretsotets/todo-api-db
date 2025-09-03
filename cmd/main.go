@@ -28,7 +28,7 @@ func main() {
 	}
 
 	_, err = db.Exec(context.Background(), 
-	"CREATE TABLE IF NOT EXISTS users (Email text PRIMARY KEY, Name TEXT, Password TEXT, Token TEXT)")
+	"CREATE TABLE IF NOT EXISTS users (Id SERIAL PRIMARY KEY, Email TEXT UNIQUE NOT NULL , Name TEXT, Password TEXT)")
 	if err != nil {
 		log.Fatal("error while creating table: ", err)
 	}

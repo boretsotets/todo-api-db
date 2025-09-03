@@ -2,15 +2,16 @@ package handlers
 
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 
+	"time"
 	"context"
 	"log"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"encoding/json"
 	"strconv"
-	"crypto/sha256"
-	"encoding/hex"
 )
 //DB_HOST=localhost
 //DB_PORT=5432
@@ -37,10 +38,39 @@ type App struct {
 	DB *pgxpool.Pool
 }
 
+var jwtKey = []byte("big_secret")
+
+func GenerateJWT(userID int) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id": userID,
+		"exp": time.Now().Add(1 * time.Hour).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(jwtKey)
+}
+
+func ValidateJWT(tokenString string) (int, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+
+	if err != nil || !token.Valid {
+		return 0, err
+	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	userID := int(claims["user_id"].(float64))
+
+	return userID, nil
+}
+
 func (a *App) HandlerGet(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 
-	if authtoken := c.GetHeader("Authorization"); authtoken == "" {
+	authtoken := c.GetHeader("Authorization")
+	_, err := ValidateJWT(authtoken)
+	if err != nil {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message" : "unauthorized"})
 		return
 	}
@@ -70,13 +100,15 @@ func (a *App) HandlerGet(c *gin.Context) {
 func (a *App) HandlerPost(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 
-	if authtoken := c.GetHeader("Authorization"); authtoken == "" {
+	authtoken := c.GetHeader("Authorization")
+	_, err := ValidateJWT(authtoken)
+	if err != nil {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message" : "unauthorized"})
 		return
-	} 
+	}
 	
 	var newtask JsonTaskPost
-	err := json.NewDecoder(c.Request.Body).Decode(&newtask)
+	err = json.NewDecoder(c.Request.Body).Decode(&newtask)
 	if err != nil {
 		c.String(http.StatusBadRequest, "Error decoding JSON")
 	} else {
@@ -93,10 +125,13 @@ func (a *App) HandlerPost(c *gin.Context) {
 
 func (a *App) HandlerUpdate(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
-	if authtoken := c.GetHeader("Authorization"); authtoken == "" {
+
+	authtoken := c.GetHeader("Authorization")
+	_, err := ValidateJWT(authtoken)
+	if err != nil {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message" : "unauthorized"})
 		return
-	} 
+	}
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -117,10 +152,12 @@ func (a *App) HandlerUpdate(c *gin.Context) {
 func (a *App) HandlerDelete(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 
-	if authtoken := c.GetHeader("Authorization"); authtoken == "" {
+	authtoken := c.GetHeader("Authorization")
+	_, err := ValidateJWT(authtoken)
+	if err != nil {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message" : "unauthorized"})
 		return
-	} 
+	}
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -141,18 +178,23 @@ func (a *App) SignUp(c *gin.Context) {
 		c.String(http.StatusBadRequest, "Error decoding JSON")
 		log.Fatalf("error decoding JSON: %v", err)
 	}
-	password := userinfo["password"]
 
-	hash := sha256.New()
-	hash.Write([]byte(password))
-	hashBytes := hash.Sum(nil)
-	hashString := hex.EncodeToString(hashBytes)
-	password = hashString
-	var token string
+	hash, _ := bcrypt.GenerateFromPassword([]byte(userinfo["password"]), bcrypt.DefaultCost)
+	err = bcrypt.CompareHashAndPassword(hash, []byte(userinfo["password"]))
+	if err != nil {
+		log.Fatalf("error hashing password: %v", err)
+	}
+
+	var id int
 	err = a.DB.QueryRow(context.Background(), 
-    "INSERT INTO users (Email, Name, Password, Token) VALUES ($1, $2, $3, $1) RETURNING Token", userinfo["email"], userinfo["name"], password).Scan(&token)
+    "INSERT INTO users (Email, Name, Password) VALUES ($1, $2, $3) RETURNING Id", userinfo["email"], userinfo["name"], hash).Scan(&id)
     if err != nil {
 		log.Fatalf("Error querying row: %v", err)
+	}
+
+	token, err := GenerateJWT(id)
+	if err != nil {
+		log.Fatalf("error generating token: %v", err)
 	}
     c.IndentedJSON(http.StatusOK, gin.H{"token": token})
 
@@ -168,18 +210,22 @@ func (a *App) SignIn(c *gin.Context) {
 		log.Fatalf("error decoding JSON: %v", err)
 	}
 
-	password := userinfo["password"]
-	hash := sha256.New()
-	hash.Write([]byte(password))
-	hashBytes := hash.Sum(nil)
-	hashString := hex.EncodeToString(hashBytes)
-	password = hashString
+	hash, _ := bcrypt.GenerateFromPassword([]byte(userinfo["password"]), bcrypt.DefaultCost)
+	err = bcrypt.CompareHashAndPassword(hash, []byte(userinfo["password"]))
+	if err != nil {
+		log.Fatalf("error hashing password: %v", err)
+	}
 
-	var token string
+	var id int
 	err = a.DB.QueryRow(context.Background(), 
-    "SELECT Token FROm users WHERE Email = $1 AND Password = $2", userinfo["email"], password).Scan(&token)
+    "SELECT Id FROm users WHERE Email = $1 AND Password = $2", userinfo["email"], hash).Scan(&id)
     if err != nil {
 		log.Fatalf("Error querying row: %v", err)
+	}
+
+	token, err := GenerateJWT(id)
+	if err != nil {
+		log.Fatalf("error generating token: %v", err)
 	}
 	c.IndentedJSON(http.StatusOK, gin.H{"token": token})
 
