@@ -10,8 +10,6 @@ import (
 	"github.com/boretsotets/todo-api-db/internal"
 )
 
-
-
 func main() {
 	// подключение к базе данных
 	db, err := pgxpool.New(context.Background(), "postgres://postgres:secret@localhost:5432/postgres?sslmode=disable")
@@ -22,7 +20,7 @@ func main() {
 
 	// создание таблицы, если её нет
 	_, err = db.Exec(context.Background(), 
-	"CREATE TABLE IF NOT EXISTS tasks (Id SERIAL PRIMARY KEY, Title TEXT, Description TEXT)")
+	"CREATE TABLE IF NOT EXISTS tasks (Id SERIAL PRIMARY KEY, Title TEXT, Description TEXT, CreatedBy INT)")
 	if err != nil {
 		log.Fatal("error while creating table: ", err)
 	}

@@ -75,7 +75,7 @@ func (a *App) HandlerGet(c *gin.Context) {
 		return
 	}
 
-	rows, err := a.DB.Query(context.Background(), "SELECT Id, Title, Description FROM tasks")
+	rows, err := a.DB.Query(context.Background(), "SELECT Id, Title, Description, CreatedBy FROM tasks")
 	if err != nil {
 		log.Fatalf("Query failed: %v", err)
 	}
@@ -101,7 +101,7 @@ func (a *App) HandlerPost(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 
 	authtoken := c.GetHeader("Authorization")
-	_, err := ValidateJWT(authtoken)
+	userID, err := ValidateJWT(authtoken)
 	if err != nil {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message" : "unauthorized"})
 		return
@@ -113,7 +113,7 @@ func (a *App) HandlerPost(c *gin.Context) {
 		c.String(http.StatusBadRequest, "Error decoding JSON")
 	} else {
 		var curr_task Task
-		err = a.DB.QueryRow(context.Background(), "INSERT INTO tasks (Title, Description) VALUES ($1, $2) RETURNING (Id, $1, $2)", newtask.Title, newtask.Description).Scan(&curr_task)
+		err = a.DB.QueryRow(context.Background(), "INSERT INTO tasks (Title, Description, CreatedBy) VALUES ($1, $2, $3) RETURNING (Id, $1, $2)", newtask.Title, newtask.Description, userID).Scan(&curr_task)
 		if err != nil {
 			log.Fatalf("Rows iteration error: %v", err)
 		}
@@ -127,7 +127,7 @@ func (a *App) HandlerUpdate(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 
 	authtoken := c.GetHeader("Authorization")
-	_, err := ValidateJWT(authtoken)
+	userId, err := ValidateJWT(authtoken)
 	if err != nil {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message" : "unauthorized"})
 		return
@@ -137,11 +137,24 @@ func (a *App) HandlerUpdate(c *gin.Context) {
 	if err != nil {
 		log.Fatalf("id conversion error: %v", err)
 	}
-	var newtask JsonTaskPost
-	err = json.NewDecoder(c.Request.Body).Decode(&newtask)
 
+	// тут проверка айди клиента и в таске
+	var taskOwnerId int
+	err = a.DB.QueryRow(context.Background(), "SELECT CreatedBy FROm tasks WHERE Id = $1", id).Scan(&taskOwnerId)
+	if err != nil {
+		log.Fatalf("Rows iteration error: %v", err)
+	}
+
+	if userId != taskOwnerId {
+		c.IndentedJSON(http.StatusForbidden, gin.H{"message" : "Forbidden"})
+		return
+	}
+	
+
+	var newtask map[string]string
+	err = json.NewDecoder(c.Request.Body).Decode(&newtask)
 	var curr_task Task
-	err = a.DB.QueryRow(context.Background(), "UPDATE tasks SET Title = $1, Description = $2 WHERE Id = $3 RETURNING (Id, Title, Description)", newtask.Title, newtask.Description, id).Scan(&curr_task)
+	err = a.DB.QueryRow(context.Background(), "UPDATE tasks SET Title = $1, Description = $2 WHERE Id = $3 RETURNING (Id, Title, Description)", newtask["title"], newtask["description"], id).Scan(&curr_task)
 	if err != nil {
 		log.Fatalf("Rows iteration error: %v", err)
 	}
@@ -176,7 +189,7 @@ func (a *App) SignUp(c *gin.Context) {
 	err := json.NewDecoder(c.Request.Body).Decode(&userinfo)
 	if err != nil {
 		c.String(http.StatusBadRequest, "Error decoding JSON")
-		log.Fatalf("error decoding JSON: %v", err)
+		return
 	}
 
 	hash, _ := bcrypt.GenerateFromPassword([]byte(userinfo["password"]), bcrypt.DefaultCost)
@@ -187,7 +200,8 @@ func (a *App) SignUp(c *gin.Context) {
 
 	var id int
 	err = a.DB.QueryRow(context.Background(), 
-    "INSERT INTO users (Email, Name, Password) VALUES ($1, $2, $3) RETURNING Id", userinfo["email"], userinfo["name"], hash).Scan(&id)
+    "INSERT INTO users (Email, Name, Password) VALUES ($1, $2, $3) RETURNING Id", 
+	userinfo["email"], userinfo["name"], string(hash)).Scan(&id)
     if err != nil {
 		log.Fatalf("Error querying row: %v", err)
 	}
@@ -207,20 +221,19 @@ func (a *App) SignIn(c *gin.Context) {
 	err := json.NewDecoder(c.Request.Body).Decode(&userinfo)
 	if err != nil {
 		c.String(http.StatusBadRequest, "Error decoding JSON")
-		log.Fatalf("error decoding JSON: %v", err)
-	}
-
-	hash, _ := bcrypt.GenerateFromPassword([]byte(userinfo["password"]), bcrypt.DefaultCost)
-	err = bcrypt.CompareHashAndPassword(hash, []byte(userinfo["password"]))
-	if err != nil {
-		log.Fatalf("error hashing password: %v", err)
+		return
 	}
 
 	var id int
+	var hashedPassword string
 	err = a.DB.QueryRow(context.Background(), 
-    "SELECT Id FROm users WHERE Email = $1 AND Password = $2", userinfo["email"], hash).Scan(&id)
-    if err != nil {
-		log.Fatalf("Error querying row: %v", err)
+    "SELECT id, password FROm users WHERE Email = $1", 
+	userinfo["email"]).Scan(&id, &hashedPassword)
+
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(userinfo["password"]))
+	if err != nil {
+		c.String(http.StatusUnauthorized, "Invalid password")
+		return
 	}
 
 	token, err := GenerateJWT(id)
