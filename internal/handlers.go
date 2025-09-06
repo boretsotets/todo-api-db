@@ -19,6 +19,9 @@ import (
 //DB_PASSWORD=secret
 //DB_NAME=postgres
 
+// curl -X GET -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTcxNTI5NzcsInVzZXJfaWQiOjR9.MaKUr7JTQZNebqMJqID0c6-Xq0ySXYiritC8euROH48" "http://localhost:8080/todos?page=1&limit=10"
+// curl -X POST -H "Content-Type application/json" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTcxNTI5NzcsInVzZXJfaWQiOjR9.MaKUr7JTQZNebqMJqID0c6-Xq0ySXYiritC8euROH48" -d '{"title": "title1", "description": "description1"}' http://localhost:8080/todos
+
 type TaskList struct {
 	Tasks []Task
 }
@@ -66,7 +69,6 @@ func ValidateJWT(tokenString string) (int, error) {
 }
 
 func (a *App) HandlerGet(c *gin.Context) {
-	c.Header("Content-Type", "application/json")
 
 	authtoken := c.GetHeader("Authorization")
 	_, err := ValidateJWT(authtoken)
@@ -74,6 +76,15 @@ func (a *App) HandlerGet(c *gin.Context) {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message" : "unauthorized"})
 		return
 	}
+	page, err := strconv.Atoi(c.Query("page"))
+	if err != nil {
+		log.Fatalf("page conversion error: %v", err)
+	}
+	pageSize, err := strconv.Atoi(c.Query("limit"))
+	if err != nil {
+		log.Fatalf("limit conversion error: %v", err)
+	}
+	offset := (page-1)*pageSize
 
 	rows, err := a.DB.Query(context.Background(), "SELECT Id, Title, Description, CreatedBy FROM tasks")
 	if err != nil {
@@ -82,19 +93,24 @@ func (a *App) HandlerGet(c *gin.Context) {
 	defer rows.Close()
 
 	var tasks []map[string]interface{}
+	index, count := 1, 0
 	for rows.Next() {
-		var id int
-		var title, description string
-		if err := rows.Scan(&id, &title, &description); err != nil {
-			log.Fatalf("Rows mapping error: %v", err)
-		}	
-		tasks = append(tasks, gin.H{"id": id, "title": title, "description": description})
+		if index > offset && count < pageSize {
+			var id, createdBy int
+			var title, description string
+			if err := rows.Scan(&id, &title, &description, &createdBy); err != nil {
+				log.Fatalf("Rows mapping error: %v", err)
+			}	
+			tasks = append(tasks, gin.H{"id": id, "title": title, "description": description})	
+			count++
+		}
+		index++
 	}
 	if err := rows.Err(); err != nil {
 		log.Fatalf("Rows iteration error: %v", err)
 	}
 
-	c.IndentedJSON(http.StatusOK, tasks)
+	c.IndentedJSON(http.StatusOK, gin.H{"data": tasks, "page": page, "limit": pageSize, "total": count})
 }
 
 func (a *App) HandlerPost(c *gin.Context) {
@@ -144,7 +160,6 @@ func (a *App) HandlerUpdate(c *gin.Context) {
 	if err != nil {
 		log.Fatalf("Rows iteration error: %v", err)
 	}
-
 	if userId != taskOwnerId {
 		c.IndentedJSON(http.StatusForbidden, gin.H{"message" : "Forbidden"})
 		return
@@ -166,7 +181,7 @@ func (a *App) HandlerDelete(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 
 	authtoken := c.GetHeader("Authorization")
-	_, err := ValidateJWT(authtoken)
+	userId, err := ValidateJWT(authtoken)
 	if err != nil {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message" : "unauthorized"})
 		return
@@ -175,6 +190,17 @@ func (a *App) HandlerDelete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		log.Fatalf("id conversion error: %v", err)
+	}
+
+	// тут проверка айди клиента и в таске
+	var taskOwnerId int
+	err = a.DB.QueryRow(context.Background(), "SELECT CreatedBy FROm tasks WHERE Id = $1", id).Scan(&taskOwnerId)
+	if err != nil {
+		log.Fatalf("Rows iteration error: %v", err)
+	}
+	if userId != taskOwnerId {
+		c.IndentedJSON(http.StatusForbidden, gin.H{"message" : "Forbidden"})
+		return
 	}
 
 	a.DB.QueryRow(context.Background(), "DELETE FROM tasks WHERE Id = $1", id)

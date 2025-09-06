@@ -10,6 +10,9 @@ import (
 	"github.com/boretsotets/todo-api-db/internal"
 )
 
+// get pagination
+// if id needed to check in delete or other funcs
+
 func main() {
 	// подключение к базе данных
 	db, err := pgxpool.New(context.Background(), "postgres://postgres:secret@localhost:5432/postgres?sslmode=disable")
