@@ -7,11 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/boretsotets/todo-api-db/internal"
+	"github.com/boretsotets/todo-api-db/internal/handlers"
+	"github.com/boretsotets/todo-api-db/internal/service"
+	"github.com/boretsotets/todo-api-db/internal/repository"
+
 )
 
-// get pagination
-// if id needed to check in delete or other funcs
+// отделение аутентификации
+// передача переменных для базы данных и ключа для токена через окружение
+// db := setupDB()
 
 func main() {
 	// подключение к базе данных
@@ -34,15 +38,26 @@ func main() {
 		log.Fatal("error while creating table: ", err)
 	}
 
-	app := &handlers.App{DB: db}
+	taskRepo := repository.NewTaskRepository(db)
+	userRepo := repository.NewUserRepository(db)
+	taskService := service.NewTaskService(taskRepo)
+	userService := service.NewUserService(userRepo)
+	taskHandler := handlers.NewTaskHandler(taskService)
+	userHandler := handlers.NewUserHandler(userService)
 
 	router := gin.Default()
-	router.POST("/register", app.SignUp)
-	router.POST("/login", app.SignIn)
-	router.GET("/todos", app.HandlerGet)
-	router.POST("/todos", app.HandlerPost)
-	router.PUT("/todos/:id", app.HandlerUpdate)
-	router.DELETE("todos/:id", app.HandlerDelete)
+
+	// user routes
+	router.POST("/register", userHandler.HandlerSignUp)
+	router.POST("/login", userHandler.HandlerSignIn)
+
+	// task routes
+	router.GET("/todos", taskHandler.HandlerGet)
+	router.POST("/todos", taskHandler.HandlerPost)
+	router.PUT("/todos/:id", taskHandler.HandlerUpdate)
+	router.DELETE("todos/:id", taskHandler.HandlerDelete)
+
+
 	router.Run("localhost:8080")
 
 }
