@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS tasks (Id SERIAL PRIMARY KEY, Title TEXT, Description TEXT, CreatedBy INT);

@@ -18,11 +18,11 @@ import (
 //DB_PASSWORD=secret
 //DB_NAME=postgres
 
-// curl -X GET -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTcyODIzODcsInVzZXJfaWQiOjZ9.4XCU6WWFBt5CG4wL8aa-EOw8q2tNT9ojzCvpOJ9Mre4" "http://localhost:8080/todos?page=6&limit=10"
-// curl -X POST -H "Content-Type application/json" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTcyNjY1OTYsInVzZXJfaWQiOjZ9.398bXum_vk8Kk4Vz4bcYS4KnwuzVOZQChmCegpwfBA8" -d '{"title": "title2", "description": "description2"}' http://localhost:8080/todos
-// curl -X PUT -H "Content-Type application/json" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTcyNjY1OTYsInVzZXJfaWQiOjZ9.398bXum_vk8Kk4Vz4bcYS4KnwuzVOZQChmCegpwfBA8" -d '{"title": "title12", "description": "description22"}' http://localhost:8080/todos/10
-// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTcyODIzODcsInVzZXJfaWQiOjZ9.4XCU6WWFBt5CG4wL8aa-EOw8q2tNT9ojzCvpOJ9Mre4
-// curl -X DELETE -H "Content-Type application/json" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTcyODIzODcsInVzZXJfaWQiOjZ9.4XCU6WWFBt5CG4wL8aa-EOw8q2tNT9ojzCvpOJ9Mre4" http://localhost:8080/todos/55
+// curl -X GET -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTczNjYxNTYsInVzZXJfaWQiOjZ9.YXtBeLRVQCKTQXwPVC0nLvIzN_rIowYFuhX-cUeI8Jc" "http://localhost:8080/todos?page=6&limit=10"
+// curl -X POST -H "Content-Type application/json" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTczNjYxNTYsInVzZXJfaWQiOjZ9.YXtBeLRVQCKTQXwPVC0nLvIzN_rIowYFuhX-cUeI8Jc" -d '{"title": "title2", "description": "description2"}' http://localhost:8080/todos
+// curl -X PUT -H "Content-Type application/json" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTczNjYxNTYsInVzZXJfaWQiOjZ9.YXtBeLRVQCKTQXwPVC0nLvIzN_rIowYFuhX-cUeI8Jc" -d '{"title": "title12", "description": "description22"}' http://localhost:8080/todos/10
+// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTczNjYxNTYsInVzZXJfaWQiOjZ9.YXtBeLRVQCKTQXwPVC0nLvIzN_rIowYFuhX-cUeI8Jc
+// curl -X DELETE -H "Content-Type application/json" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTczNjYxNTYsInVzZXJfaWQiOjZ9.YXtBeLRVQCKTQXwPVC0nLvIzN_rIowYFuhX-cUeI8Jc" http://localhost:8080/todos/55
 
 
 
