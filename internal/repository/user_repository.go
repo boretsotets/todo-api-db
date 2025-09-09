@@ -7,10 +7,14 @@ import (
 	"context"
 )
 
+// UserRepository реализует интерфейс доступа к данным о пользователях.
+// Внутри использует подключение к базе данных.
 type UserRepository struct {
 	db *pgxpool.Pool
 }
 
+// NewUserRepository создает новый репозиторий пользователей с переданным
+// подключением к базе данных
 func NewUserRepository(db *pgxpool.Pool) *UserRepository {
 	return &UserRepository{db: db}
 }
@@ -26,7 +30,7 @@ func (r *UserRepository) DatabaseInsertUser(user models.User) (int, error) {
 func (r *UserRepository) DatabaseRetrieveUser(email string) (models.User, error) {
 	var user models.User
 	err := r.db.QueryRow(context.Background(), 
-    "SELECT Id, Name, Email, Password FROm users WHERE Email = $1", 
+    "SELECT Id, Name, Email, Password FROM users WHERE Email = $1", 
 	email).Scan(&user.Id, &user.Name, &user.Email, &user.Password)
 	return user, err
 }

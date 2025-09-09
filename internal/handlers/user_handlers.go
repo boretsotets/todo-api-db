@@ -13,14 +13,24 @@ import (
 // curl -X POST -H "Content-Type application/json" -d '{"name": "Donnie Yen", "email": "donnie@yen.com", "password": "donnieyen"}' http://localhost:8080/register
 // curl -X POST -H "Content-Type application/json" -d '{"email": "donnie@yen.com", "password": "donnieyen"}' http://localhost:8080/login
 
+// UserHandler реализует HTTP-обработчики для работы с пользователями.
+// Он получает зависимость от UserService и использует ее для
+// выполнения бизнес-логики.
 type UserHandler struct {
 	service *service.UserService
 }
 
+// NewUserHandler создает новый экземпляр UserHandler
+// с внедренным сервисом задач
 func NewUserHandler(s *service.UserService) *UserHandler {
 	return &UserHandler{service: s}
 }
 
+// HandlerSignUp реализует HTTP-обработчик для работы с POST запросом
+// при регистрации нового пользователя. Парсит информацию о пользователе
+// и передает управление в сервисный слой. Формирует ответ клиенту в 
+// зависимости от результата работы сервиса. В случае успеха возвращает
+// сгенерированный токен авторизации
 func (h *UserHandler) HandlerSignUp(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 
@@ -47,6 +57,10 @@ func (h *UserHandler) HandlerSignUp(c *gin.Context) {
 
 }
 
+// HandlerSignIn реализует HTTP-обработчик для работы с POST запросом
+// при логине пользователя. Парсит информацию, необходимую для авторизации и
+// передает управление в сервисный слой. Формирует ответ клиенту на основе
+// результата работы сервиса. В случае успеха возвращает токен авторизации
 func (h *UserHandler) HandlerSignIn(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 

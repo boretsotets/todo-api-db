@@ -1,3 +1,6 @@
+// Package repository отвечает за доступ к данным приложения.
+// Он скрывает детали работы с базой данных
+// и предоставляет сервисам удобные методы высокого уровня
 package repository
 
 import (
@@ -8,10 +11,14 @@ import (
 	"fmt"
 )
 
+// TaskRepository реализует интерфейс доступа к данным о todo-задачах.
+// Внутри использует подключение к базе данных.
 type TaskRepository struct {
 	db *pgxpool.Pool
 }
 
+// NewTaskRepository создает новый репозиторий todo-задач с переданным
+// подключением к базе данных
 func NewTaskRepository(db *pgxpool.Pool) *TaskRepository {
 	return &TaskRepository{db: db}
 }
@@ -50,7 +57,7 @@ func (r *TaskRepository) DatabaseInsertTask(newTask models.Task) (models.Task, e
 func (r *TaskRepository) DatabaseGetTaskOwner(task models.Task) (int, error) {
 	var taskOwnerId int
 	err := r.db.QueryRow(context.Background(), 
-	"SELECT CreatedBy FROm tasks WHERE Id = $1", task.Id).Scan(&taskOwnerId)
+	"SELECT CreatedBy FROM tasks WHERE Id = $1", task.Id).Scan(&taskOwnerId)
 	return taskOwnerId, err
 }
 
@@ -65,7 +72,7 @@ func (r *TaskRepository) DatabaseUpdateTask(task models.Task) (models.Task, erro
 func (r *TaskRepository) DatabaseRetrieveTaskById(taskId int) (int, error) {
 	var taskOwnerId int
 	err := r.db.QueryRow(context.Background(), 
-	"SELECT CreatedBy FROm tasks WHERE Id = $1", taskId).Scan(&taskOwnerId)
+	"SELECT CreatedBy FROM tasks WHERE Id = $1", taskId).Scan(&taskOwnerId)
 	return taskOwnerId, err
 }
 

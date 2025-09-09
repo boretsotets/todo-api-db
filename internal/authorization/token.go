@@ -1,3 +1,5 @@
+// Package authorization реализует функции для генерации и валидации
+// JWT токена при авторизации пользователей
 package authorization
 
 import (
@@ -9,6 +11,8 @@ import (
 
 var jwtKey = []byte(os.Getenv("JWT_SECRET"))
 
+// Generate JWT генерирует JWT токен для пользователя с идентификатором
+// userId, действующий в течение одного часа. Возвращает токен и ошибку
 func GenerateJWT(userID int) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,
@@ -19,6 +23,9 @@ func GenerateJWT(userID int) (string, error) {
 	return token.SignedString(jwtKey)
 }
 
+// ValidateJWT проверяет, является ли tokenString валидным токеном
+// авторизации пользователя. Возвращает userID пользователя, для которого
+// был сгенерирован токен, и ошибку.
 func ValidateJWT(tokenString string) (int, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return jwtKey, nil

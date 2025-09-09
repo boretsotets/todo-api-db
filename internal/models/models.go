@@ -1,5 +1,10 @@
+// Package models реализует структуры, использующиеся в проекте
 package models
 
+
+// Структура PaginatedResponse используется для ответа
+// на запрос GET для возвращения значений с учетом нужной страницы
+// и размера страницы
 type PaginatedResponse struct {
 	Data []Task `json:"data"`
 	Page int `json:"page"`
@@ -7,10 +12,7 @@ type PaginatedResponse struct {
 	Count int `json:"count"`
 }
 
-type TaskList struct {
-	Tasks []Task
-}
-
+// Структура Task используется при работе с заданиями todo листа
 type Task struct {
 	Id int `json:"id"`
 	Title string `json:"title"`
@@ -18,6 +20,7 @@ type Task struct {
 	CreatedBy *int `json:"createdBy"`
 }
 
+// Структура User используется при работе с пользователями todo листа
 type User struct {
 	Id int `json:"id"`
 	Name string `json:"name"`

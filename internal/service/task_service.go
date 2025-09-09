@@ -1,3 +1,6 @@
+// Package service реализует бизнес-логику приложения.
+// Сервисы инкапсулируют сценарии использования, 
+// работают с репозиторием и пакетом авторизации.
 package service
 
 import (
@@ -8,10 +11,15 @@ import (
 	"fmt"
 )
 
+// TaskService содержит бизнес-логику для работы с todo-задачами.
+// Он обращается к репозиторию задач для сохранения, получения, 
+// изменения или удаления данных, но сам не зависит от деталей
+// реализации хранилища
 type TaskService struct {
 	repo *repository.TaskRepository
 }
 
+// NewTaskService создает новый сервис todo-задач с внедренным репозиторием
 func NewTaskService(r *repository.TaskRepository) *TaskService {
 	return &TaskService{repo: r}
 }

@@ -9,10 +9,14 @@ import (
 	"fmt"
 )
 
+// UserService содержит бизнес-логику для работы с пользователями.
+// Он обращается к репозиторию пользователей для сохранения или получения, 
+// данных, но сам не зависит от деталей реализации хранилища
 type UserService struct {
 	repo *repository.UserRepository
 }
 
+// NewTaskService создает новый сервис пользователей с внедренным репозиторием
 func NewUserService(r *repository.UserRepository) *UserService {
 	return &UserService{repo: r}
 }

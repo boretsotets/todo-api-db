@@ -1,3 +1,6 @@
+// Package handlers отвечает за транспортный слой приложения.
+// Здесь находятся HTTP-обработчики, которые принимают запросы,
+// передают управление в сервисный слой и формируют ответы для клиента.
 package handlers
 
 import (
@@ -20,15 +23,23 @@ import (
 // curl -X DELETE -H "Content-Type application/json" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTc0NDY5NzIsInVzZXJfaWQiOjJ9.GbVaoCciaXWT70VY67PmnOLzFzD9v52OnndWTGsFhOU" http://localhost:8080/todos/55
 
 
-
+// TaskHandler реализует HTTP-обработчики для работы с todo-задачами.
+// Он получает зависимость от TaskService и использует ее для
+// выполнения бизнес-логики.
 type TaskHandler struct {
 	service *service.TaskService
 }
 
+// NewTaskHandler создает новый экземпляр TaskHandler
+// с внедренным сервисом задач
 func NewTaskHandler(s *service.TaskService) *TaskHandler {
 	return &TaskHandler{service: s}
 }
 
+// HabdlerGet реализует HTTP-обработчик для работы с запросом GET.
+// Проверяет токен авторизации пользователя, парсит query параметры
+// page и limit. После этого передает управление в сервисный слой
+// и формирует ответ клиенту в зависимости от результата работы сервиса.
 func (h *TaskHandler) HandlerGet(c *gin.Context) {
 
 	authtoken := c.GetHeader("Authorization")
@@ -64,13 +75,17 @@ func (h *TaskHandler) HandlerGet(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, response)
 }
 
+// HandlerPost реализует HTTP-обработчик для работы с запросом POST
+// при создании новых todo-тасков. Проверяет авторизацию пользователя,
+// парсит информацию о новой задаче и передает управление в сервисный слой.
+// Формирует ответ клиенту в зависимости от результата работы сервиса.
 func (h *TaskHandler) HandlerPost(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 	var newTask models.Task
 	var err error
 
 	authtoken := c.GetHeader("Authorization")
-	newTask.Id, err = authorization.ValidateJWT(authtoken)
+	newTask.Id, err = service.ServiceAuth(authtoken)
 	if err != nil {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message" : "unauthorized"})
 		return
@@ -92,11 +107,16 @@ func (h *TaskHandler) HandlerPost(c *gin.Context) {
 
 }
 
+// HandlerUpdate реализует HTTP-обработчик для работы с запросом PUT
+// при изменении todo-тасков. Проверяет авторизацию пользователя, 
+// парсит id задачи, которую надо изменить, и новые поля для задачи.
+// Передает управление в сервисный слой и формирует ответ клиенту 
+// на основе результата работы сервиса.
 func (h *TaskHandler) HandlerUpdate(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 
 	authtoken := c.GetHeader("Authorization")
-	userId, err := authorization.ValidateJWT(authtoken)
+	userId, err := service.ServiceAuth(authtoken)
 	if err != nil {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message" : "unauthorized"})
 		return
@@ -130,13 +150,16 @@ func (h *TaskHandler) HandlerUpdate(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, gin.H{"id": newTask.Id, "title": newTask.Title, "description": newTask.Description})
 
 }
-// тут надо выделит файлы, а то методы сломаются
 
+// HandlerDelete реализует HTTP-обработчик для запроса DELETE
+// при удалении todo-таска. Проверяет авторизацию пользователя, 
+// парсит id задачи, которую надо удалить и передает управление
+// в сервисный слой. Формирует ответ клиенту на основе работы сервиса.
 func (h *TaskHandler) HandlerDelete(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 
 	authtoken := c.GetHeader("Authorization")
-	userId, err := authorization.ValidateJWT(authtoken)
+	userId, err := service.ServiceAuth(authtoken)
 	if err != nil {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message" : "unauthorized"})
 		return
