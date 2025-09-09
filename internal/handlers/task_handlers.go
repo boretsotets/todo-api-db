@@ -12,17 +12,12 @@ import (
 	"strconv"
 	"strings"
 )
-//DB_HOST=localhost
-//DB_PORT=5432
-//DB_USER=postgres
-//DB_PASSWORD=secret
-//DB_NAME=postgres
 
 // curl -X GET -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTczNjYxNTYsInVzZXJfaWQiOjZ9.YXtBeLRVQCKTQXwPVC0nLvIzN_rIowYFuhX-cUeI8Jc" "http://localhost:8080/todos?page=6&limit=10"
-// curl -X POST -H "Content-Type application/json" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTczNjYxNTYsInVzZXJfaWQiOjZ9.YXtBeLRVQCKTQXwPVC0nLvIzN_rIowYFuhX-cUeI8Jc" -d '{"title": "title2", "description": "description2"}' http://localhost:8080/todos
-// curl -X PUT -H "Content-Type application/json" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTczNjYxNTYsInVzZXJfaWQiOjZ9.YXtBeLRVQCKTQXwPVC0nLvIzN_rIowYFuhX-cUeI8Jc" -d '{"title": "title12", "description": "description22"}' http://localhost:8080/todos/10
+// curl -X POST -H "Content-Type application/json" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTc0NDgzODIsInVzZXJfaWQiOjd9.XM2LwiReRdwMzAGUorHC0_hDAOnU2PnKq8-F9N65RnA" -d '{"title": "title3", "description": "description3"}' http://localhost:8080/todos
+// curl -X PUT -H "Content-Type application/json" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTc0NDY5NzIsInVzZXJfaWQiOjJ9.GbVaoCciaXWT70VY67PmnOLzFzD9v52OnndWTGsFhOU" -d '{"title": "title22", "description": "description22"}' http://localhost:8080/todos/1
 // eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTczNjYxNTYsInVzZXJfaWQiOjZ9.YXtBeLRVQCKTQXwPVC0nLvIzN_rIowYFuhX-cUeI8Jc
-// curl -X DELETE -H "Content-Type application/json" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTczNjYxNTYsInVzZXJfaWQiOjZ9.YXtBeLRVQCKTQXwPVC0nLvIzN_rIowYFuhX-cUeI8Jc" http://localhost:8080/todos/55
+// curl -X DELETE -H "Content-Type application/json" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTc0NDY5NzIsInVzZXJfaWQiOjJ9.GbVaoCciaXWT70VY67PmnOLzFzD9v52OnndWTGsFhOU" http://localhost:8080/todos/55
 
 
 
@@ -37,7 +32,7 @@ func NewTaskHandler(s *service.TaskService) *TaskHandler {
 func (h *TaskHandler) HandlerGet(c *gin.Context) {
 
 	authtoken := c.GetHeader("Authorization")
-	_, err := authorization.ValidateJWT(authtoken)
+	_, err := service.ServiceAuth(authtoken)
 	if err != nil {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message" : "unauthorized"})
 		return

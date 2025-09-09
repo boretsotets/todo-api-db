@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 	
 	"github.com/gin-gonic/gin"
 
@@ -18,7 +19,7 @@ import (
 func main() {
 	// подключение к базе данных
 	ctx := context.Background()
-	pool, err := database.InitDb(ctx, "postgres://postgres:secret@localhost:5432/postgres?sslmode=disable")
+	pool, err := database.InitDb(ctx, os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatal("cannot connect to db: ", err)
 	}
@@ -43,6 +44,6 @@ func main() {
 	router.PUT("/todos/:id", taskHandler.HandlerUpdate)
 	router.DELETE("todos/:id", taskHandler.HandlerDelete)
 
-	router.Run("localhost:8080")
+	router.Run(":8080")
 
 }

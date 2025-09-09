@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/boretsotets/todo-api-db/internal/authorization"
 	"github.com/boretsotets/todo-api-db/internal/repository"
 	"github.com/boretsotets/todo-api-db/internal/models"
 
@@ -66,4 +67,9 @@ func (s *TaskService) ServiceDelete(userId, id int) (error) {
 		return fmt.Errorf("Database error: %w", err)
 	}
 	return nil
+}
+
+func ServiceAuth(token string) (int, error) {
+	userId, err := authorization.ValidateJWT(token)
+	return userId, err
 }

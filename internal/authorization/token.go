@@ -3,10 +3,11 @@ package authorization
 import (
 	"github.com/golang-jwt/jwt/v5"
 
+	"os"
 	"time"
 )
 
-var jwtKey = []byte("big_secret")
+var jwtKey = []byte(os.Getenv("JWT_SECRET"))
 
 func GenerateJWT(userID int) (string, error) {
 	claims := jwt.MapClaims{

@@ -1,0 +1,38 @@
+
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+  
+  migrate:
+    image: migrate/migrate
+    command: [
+      "-path", "/migrations",
+      "-database", "postgres://postgres:password@db:5432/postgres?sslmode=disable",
+      "up"
+    ]
+    volumes:
+      - ./migrations:/migrations
+    depends_on:
+      - db
+
+  app:
+    build: .
+    depends_on:
+      - db
+      - migrate
+    environment:
+      - DATABASE_URL=postgres://postgres:password@db:5432/postgres?sslmode=disable
+      - JWT_SECRET=bigsecret
+    ports:
+      - "8080:8080"
+
+volumes:
+  db-data:
