@@ -7,7 +7,9 @@ import (
 	"context"
 )
 
-// Функция InitDb реализует создание соединения с базой данных 
+// InitBb устанавливает соединение с базой данных Postgres
+// и возвращает пул соединений. Используется для работы
+// всех репозиториев
 func InitDb(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {

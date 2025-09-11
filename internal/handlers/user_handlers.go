@@ -1,12 +1,11 @@
 package handlers
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/boretsotets/todo-api-db/internal/service"
+	"github.com/gin-gonic/gin"
 
-	
-	"net/http"
 	"encoding/json"
+	"net/http"
 	"strings"
 )
 
@@ -28,7 +27,7 @@ func NewUserHandler(s *service.UserService) *UserHandler {
 
 // HandlerSignUp реализует HTTP-обработчик для работы с POST запросом
 // при регистрации нового пользователя. Парсит информацию о пользователе
-// и передает управление в сервисный слой. Формирует ответ клиенту в 
+// и передает управление в сервисный слой. Формирует ответ клиенту в
 // зависимости от результата работы сервиса. В случае успеха возвращает
 // сгенерированный токен авторизации
 func (h *UserHandler) HandlerSignUp(c *gin.Context) {
@@ -53,7 +52,7 @@ func (h *UserHandler) HandlerSignUp(c *gin.Context) {
 		return
 	}
 
-    c.IndentedJSON(http.StatusOK, gin.H{"token": token})
+	c.IndentedJSON(http.StatusOK, gin.H{"token": token})
 
 }
 
@@ -86,5 +85,3 @@ func (h *UserHandler) HandlerSignIn(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, gin.H{"token": token})
 
 }
-
-

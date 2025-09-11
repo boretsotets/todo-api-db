@@ -23,10 +23,13 @@ func NewTaskRepository(db *pgxpool.Pool) *TaskRepository {
 	return &TaskRepository{db: db}
 }
 
+// DatabaseGetTasks выполняет SQL-запрос к базе данных для получения
+// todo-задач с учетом офсета и размера страницы. Возвращает список
+// задач или ошибку, если запрос не может быть выполнен
 func (r *TaskRepository) DatabaseGetTasks(response *models.PaginatedResponse, offset int) error {
-	rows, err := r.db.Query(context.Background(), 
-	"SELECT Id, Title, Description, CreatedBy FROM tasks LIMIT $1 OFFSET $2",
-	response.Limit, offset)
+	rows, err := r.db.Query(context.Background(),
+		"SELECT Id, Title, Description, CreatedBy FROM tasks LIMIT $1 OFFSET $2",
+		response.Limit, offset)
 	if err != nil {
 		return fmt.Errorf("Database query error: %w", err)
 	}
@@ -46,39 +49,54 @@ func (r *TaskRepository) DatabaseGetTasks(response *models.PaginatedResponse, of
 	return nil
 }
 
+// DatabaseInsertTask выполняет SQL-запрос к базе данных для
+// сохранения в ней новой задачи. Возвращает поля созданной задачи
+// или ошибку, если запрос не может быть обработан
 func (r *TaskRepository) DatabaseInsertTask(newTask models.Task) (models.Task, error) {
 	var currentTask models.Task
-	err := r.db.QueryRow(context.Background(), 
-	"INSERT INTO tasks (Title, Description, CreatedBy) VALUES ($1, $2, $3) RETURNING (Id, $1, $2, $3)", 
-	newTask.Title, newTask.Description, newTask.Id).Scan(&currentTask)
+	err := r.db.QueryRow(context.Background(),
+		"INSERT INTO tasks (Title, Description, CreatedBy) VALUES ($1, $2, $3) RETURNING (Id, $1, $2, $3)",
+		newTask.Title, newTask.Description, newTask.Id).Scan(&currentTask)
 	return currentTask, err
 }
 
+// DatabaseGetTaskOwner выполняет SQL-запрос к базе данных для
+// получения id пользователя, создавшего задачу. Возвращает id
+// или ошибку, если запрос не может быть обработан
 func (r *TaskRepository) DatabaseGetTaskOwner(task models.Task) (int, error) {
 	var taskOwnerId int
-	err := r.db.QueryRow(context.Background(), 
-	"SELECT CreatedBy FROM tasks WHERE Id = $1", task.Id).Scan(&taskOwnerId)
+	err := r.db.QueryRow(context.Background(),
+		"SELECT CreatedBy FROM tasks WHERE Id = $1", task.Id).Scan(&taskOwnerId)
 	return taskOwnerId, err
 }
 
+// DatabaseUpdateTask выполняет SQL-запрос к базе данных для
+// изменения полей существующей задачи. Возвращает поля измененной
+// задачи или ошибку, если запрос не может быть обработан
 func (r *TaskRepository) DatabaseUpdateTask(task models.Task) (models.Task, error) {
 	var returnedTask models.Task
-	err := r.db.QueryRow(context.Background(), 
-	"UPDATE tasks SET Title = $1, Description = $2 WHERE Id = $3 RETURNING (Id, Title, Description)", 
-	task.Title, task.Description, task.Id).Scan(&returnedTask)
+	err := r.db.QueryRow(context.Background(),
+		"UPDATE tasks SET Title = $1, Description = $2 WHERE Id = $3 RETURNING (Id, Title, Description)",
+		task.Title, task.Description, task.Id).Scan(&returnedTask)
 	return returnedTask, err
 }
 
+// DatabaseRetrieveTaskById выполняет SQL-запрос к базе данных
+// для получения todo-задачи по ее id. Возвращает задачу или
+// ошибку, если запрос не может быть обработан
 func (r *TaskRepository) DatabaseRetrieveTaskById(taskId int) (int, error) {
 	var taskOwnerId int
-	err := r.db.QueryRow(context.Background(), 
-	"SELECT CreatedBy FROM tasks WHERE Id = $1", taskId).Scan(&taskOwnerId)
+	err := r.db.QueryRow(context.Background(),
+		"SELECT CreatedBy FROM tasks WHERE Id = $1", taskId).Scan(&taskOwnerId)
 	return taskOwnerId, err
 }
 
+// DatabaseDeleteTask выполняет SQL-запрос к базе данных
+// для удаления задачи по ее id. Возвращает ошибку, если
+// запрос не может быть обработан
 func (r *TaskRepository) DatabaseDeleteTask(id int) error {
 	var deleteCheckId int
-	err := r.db.QueryRow(context.Background(), 
-	"DELETE FROM tasks WHERE Id = $1 RETURNING Id", id).Scan(&deleteCheckId)
+	err := r.db.QueryRow(context.Background(),
+		"DELETE FROM tasks WHERE Id = $1 RETURNING Id", id).Scan(&deleteCheckId)
 	return err
 }
