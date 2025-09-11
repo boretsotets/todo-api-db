@@ -4,14 +4,13 @@
 package handlers
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/boretsotets/todo-api-db/internal/service"
-	"github.com/boretsotets/todo-api-db/internal/models"
 	"github.com/boretsotets/todo-api-db/internal/authorization"
+	"github.com/boretsotets/todo-api-db/internal/models"
+	"github.com/boretsotets/todo-api-db/internal/service"
+	"github.com/gin-gonic/gin"
 
-
-	"net/http"
 	"encoding/json"
+	"net/http"
 	"strconv"
 	"strings"
 )
@@ -21,7 +20,6 @@ import (
 // curl -X PUT -H "Content-Type application/json" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTc0NDY5NzIsInVzZXJfaWQiOjJ9.GbVaoCciaXWT70VY67PmnOLzFzD9v52OnndWTGsFhOU" -d '{"title": "title22", "description": "description22"}' http://localhost:8080/todos/1
 // eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTczNjYxNTYsInVzZXJfaWQiOjZ9.YXtBeLRVQCKTQXwPVC0nLvIzN_rIowYFuhX-cUeI8Jc
 // curl -X DELETE -H "Content-Type application/json" -H "Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTc0NDY5NzIsInVzZXJfaWQiOjJ9.GbVaoCciaXWT70VY67PmnOLzFzD9v52OnndWTGsFhOU" http://localhost:8080/todos/55
-
 
 // TaskHandler реализует HTTP-обработчики для работы с todo-задачами.
 // Он получает зависимость от TaskService и использует ее для
@@ -45,7 +43,7 @@ func (h *TaskHandler) HandlerGet(c *gin.Context) {
 	authtoken := c.GetHeader("Authorization")
 	_, err := service.ServiceAuth(authtoken)
 	if err != nil {
-		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message" : "unauthorized"})
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
 		return
 	}
 
@@ -87,10 +85,10 @@ func (h *TaskHandler) HandlerPost(c *gin.Context) {
 	authtoken := c.GetHeader("Authorization")
 	newTask.Id, err = service.ServiceAuth(authtoken)
 	if err != nil {
-		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message" : "unauthorized"})
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
 		return
 	}
-	
+
 	err = json.NewDecoder(c.Request.Body).Decode(&newTask)
 	if err != nil {
 		c.String(http.StatusBadRequest, "Error decoding JSON")
@@ -103,14 +101,13 @@ func (h *TaskHandler) HandlerPost(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, currentTask)
-	
 
 }
 
 // HandlerUpdate реализует HTTP-обработчик для работы с запросом PUT
-// при изменении todo-тасков. Проверяет авторизацию пользователя, 
+// при изменении todo-тасков. Проверяет авторизацию пользователя,
 // парсит id задачи, которую надо изменить, и новые поля для задачи.
-// Передает управление в сервисный слой и формирует ответ клиенту 
+// Передает управление в сервисный слой и формирует ответ клиенту
 // на основе результата работы сервиса.
 func (h *TaskHandler) HandlerUpdate(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
@@ -118,7 +115,7 @@ func (h *TaskHandler) HandlerUpdate(c *gin.Context) {
 	authtoken := c.GetHeader("Authorization")
 	userId, err := service.ServiceAuth(authtoken)
 	if err != nil {
-		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message" : "unauthorized"})
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
 		return
 	}
 
@@ -152,7 +149,7 @@ func (h *TaskHandler) HandlerUpdate(c *gin.Context) {
 }
 
 // HandlerDelete реализует HTTP-обработчик для запроса DELETE
-// при удалении todo-таска. Проверяет авторизацию пользователя, 
+// при удалении todo-таска. Проверяет авторизацию пользователя,
 // парсит id задачи, которую надо удалить и передает управление
 // в сервисный слой. Формирует ответ клиенту на основе работы сервиса.
 func (h *TaskHandler) HandlerDelete(c *gin.Context) {
@@ -161,13 +158,13 @@ func (h *TaskHandler) HandlerDelete(c *gin.Context) {
 	authtoken := c.GetHeader("Authorization")
 	userId, err := service.ServiceAuth(authtoken)
 	if err != nil {
-		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message" : "unauthorized"})
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
 		return
 	}
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message" : "id convertion error"})
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "id convertion error"})
 		return
 	}
 
@@ -183,8 +180,7 @@ func (h *TaskHandler) HandlerDelete(c *gin.Context) {
 		}
 		return
 	}
-	
-	c.Status(http.StatusNoContent)
-	
-}
 
+	c.Status(http.StatusNoContent)
+
+}

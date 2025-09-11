@@ -4,13 +4,13 @@ import (
 	"context"
 	"log"
 	"os"
-	
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/boretsotets/todo-api-db/internal/database"
+	"github.com/boretsotets/todo-api-db/internal/handlers"
 	"github.com/boretsotets/todo-api-db/internal/repository"
 	"github.com/boretsotets/todo-api-db/internal/service"
-	"github.com/boretsotets/todo-api-db/internal/handlers"
 )
 
 // отделение аутентификации
