@@ -20,6 +20,7 @@ API будет доступно на http://localhost:8080
 ## Примеры запросов
 
 ```
+// пример регистрации
 curl -X POST -H "Content-Type application/json" -d '{"name": "username", "email": "user@name.com", "password": "password1"}' http://localhost:8080/register
 curl -X POST -H "Content-Type application/json" -d '{"email": "user@name.com", "password": "password1"}' http://localhost:8080/login
 
